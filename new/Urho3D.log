@@ -1,0 +1,12 @@
+[Mon May 11 22:56:53 2020] INFO: Opened log file Urho3D.log
+[Mon May 11 22:56:53 2020] INFO: Created 1 worker thread
+[Mon May 11 22:56:53 2020] INFO: Added resource path /home/user/prog/urho/new/Data/
+[Mon May 11 22:56:53 2020] INFO: Added resource path /home/user/prog/urho/new/CoreData/
+[Mon May 11 22:56:53 2020] INFO: Added resource path /home/user/prog/urho/new/Autoload/LargeData/
+[Mon May 11 22:56:54 2020] INFO: Adapter used NVIDIA Corporation GeForce GT 630/PCIe/SSE2
+[Mon May 11 22:56:54 2020] INFO: Set screen mode 800x600 rate 60 Hz windowed monitor 0 resizable
+[Mon May 11 22:56:54 2020] INFO: Initialized input
+[Mon May 11 22:56:54 2020] INFO: Initialized user interface
+[Mon May 11 22:56:54 2020] INFO: Initialized renderer
+[Mon May 11 22:56:54 2020] INFO: Set audio mode 44100 Hz stereo interpolated
+[Mon May 11 22:56:54 2020] INFO: Initialized engine
