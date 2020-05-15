@@ -23,9 +23,11 @@
 #include <Urho3D/Physics/PhysicsWorld.h>
 #include <Urho3D/Physics/RigidBody.h>
 #include <Urho3D/Physics/CollisionShape.h>
+#include <Urho3D/IO/File.h>
 #include <iostream>
 
 #define MOUSESENS .2
+#define TOUCHSENS 10
 #define BOXES 400
 
 namespace Urho3D
@@ -51,12 +53,15 @@ private:
 	void update(StringHash evType, VariantMap &evData );
 	void postUpdate(StringHash , VariantMap &);
 	void kdHand(StringHash evType, VariantMap &evData );
+	void initTouch();
 	SharedPtr<Text> text;
 	SharedPtr<Scene> scene;
 	SharedPtr<Node> boxNode;
 	SharedPtr<Node> cameraNode;
 	SharedPtr<Node> playerNode;
 	bool draw;
+
+	unsigned screenJoystick;
 };
 URHO3D_DEFINE_APPLICATION_MAIN(MyApp)
 
@@ -69,6 +74,9 @@ MyApp::MyApp(Context *context):
 void MyApp::Setup()
 {
 	engineParameters_[EP_FULL_SCREEN] = false;
+#ifdef __ANDROID__
+	engineParameters_[EP_FULL_SCREEN] = true;
+#endif
 }
 
 
@@ -79,10 +87,14 @@ void MyApp::Start()
 	text = new Text(context_);
 	text->SetText("Test");
 	text->SetFont(cache->GetResource<Font>("Fonts/Anonymous Pro.ttf", 20));
-	text->SetSize(40, 40);
 	text->SetColor(Color(.1, .7, .1));
 	text->SetHorizontalAlignment(HA_CENTER);
 	GetSubsystem<UI>()->GetRoot()->AddChild(text);
+#if 1//def __ANDROID__
+
+
+	initTouch();
+#endif
 	//Scene
 	scene = new Scene(context_);
 	scene->CreateComponent<Octree>();
@@ -107,7 +119,7 @@ void MyApp::Start()
 	//Ground
 	Node *groundNode = scene->CreateChild("Ground");
 	groundNode->SetPosition(Vector3(0, -.5, 0));
-	groundNode->SetScale(Vector3(500., 2.0, 500.));
+	groundNode->SetScale(Vector3(500., 5.0, 500.));
 
 	StaticModel *ground = groundNode->CreateComponent<StaticModel>();
 	ground->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
@@ -133,7 +145,7 @@ void MyApp::Start()
 		body->SetRestitution(.5);
 		body->SetCollisionLayer(2);
 		boxNode->CreateComponent<CollisionShape>()->SetBox(Vector3::ONE);
-		printf("Node id: %d\n", boxNode->GetID());
+		//printf("Node id: %d\n", boxNode->GetID());
 	}
 	//Player
 	playerNode = scene->CreateChild("Player");
@@ -173,8 +185,63 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 	using namespace KeyDown;
 	int key = evData[P_KEY].GetInt();
 	if(key==KEY_ESCAPE) engine_->Exit();
-	if(key==KEY_0) draw = !draw;
-	if(key==KEY_TAB) GetSubsystem<Input>()->SetMouseVisible(!GetSubsystem<Input>()->IsMouseVisible());
+	if(key==KEY_6) draw = !draw;
+	if(key==KEY_TAB)
+	{
+		GetSubsystem<Input>()->SetTouchEmulation(!GetSubsystem<Input>()->IsMouseVisible());
+		GetSubsystem<Input>()->SetMouseVisible(!GetSubsystem<Input>()->IsMouseVisible());
+	}
+	if(key==KEY_SELECT)
+	{
+		static bool en=0;
+		en = !en;
+		Input* input = GetSubsystem<Input>();
+		if(!screenJoystick)
+			screenJoystick = input->AddScreenJoystick(GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/ScreenJoystickSettings_Samples.xml"),
+									 GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/DefaultStyle.xml"));
+
+		else input->SetScreenJoystickVisible(screenJoystick, en);
+
+	}
+}
+
+void MyApp::initTouch()
+{
+//	GetSubsystem<UI>()->SetWidth(400);
+//	GetSubsystem<UI>()->SetHeight(400);
+	GetSubsystem<UI>()->SetScale(3);
+//	GetSubsystem<Engine>()->SetPauseMinimized(true);
+//	auto graphics = GetSubsystem<Graphics>();
+//	auto monitor = graphics->GetMonitor();
+//	auto resolution = graphics->GetResolutions(monitor);
+	//auto cResol = graphics->FindBestResolutionIndex(monitor, graphics->GetWidth(), graphics->GetHeight(), graphics->GetRefreshRate());
+
+	//graphics->SetMode(graphics->GetWidth(), graphics->GetHeight(), true, false, false, false, true, true, true, monitor, graphics->GetRefreshRate());
+	//engineParameters_[EP_FULL_SCREEN] = true;
+	text->SetFontSize(20);
+	ResourceCache *cache = GetSubsystem<ResourceCache>();
+	Input *input = GetSubsystem<Input>();
+	XMLFile *layout = cache->GetResource<XMLFile>("UI/my.xml");
+	screenJoystick = input->AddScreenJoystick(layout,
+											  GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/DefaultStyle.xml"));
+	UIElement *scjoy = GetSubsystem<UI>()->GetRoot()->GetChild(String("ScreenJoystick"));
+	//std::cout <<ui->GetName().CString();
+	UIElement *hat = scjoy->GetChild(String("Hat0"));
+	scjoy->GetChild(String("Button0"))->GetChildStaticCast<Text>("Label", true)->SetText("Up");
+	//hat->SetAlignment(HA_LEFT, VA_BOTTOM);
+	hat->SetPosition(hat->GetPosition().x_+10, hat->GetPosition().y_+60);
+	//button->SetVisible(true);
+	//auto a = button->GetChildStaticCast<Text>("Label",true);
+	//std::cout <<a->GetText().CString();
+	//a->SetName("KeyBinding");
+//	a->SetText("Up");
+	scjoy->GetChild(String("Button1"))->GetChildStaticCast<Text>("Label", true)->SetText("Down");
+	//std::cout <<hat->GetName().CString();
+	//hat->SetWidth(150.);
+	//hat->SetHeight(150.);
+	screenJoystick = 0;
+	File save(context_,"/home/user/123/ui.xml", FILE_WRITE );
+	GetSubsystem<UI>()->GetRoot()->GetChild(String("ScreenJoystick"))->SaveXML(save);
 }
 
 void MyApp::update(StringHash/* evType*/, VariantMap &evData)
@@ -186,10 +253,10 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 	cleanTime+=timeStep;
 	time+=timeStep;
 
-			if(time>1.)
+	if(time>1.)
 	{
 		char tx[128];
-		sprintf(tx, "Time:%f - Framerate: %.2fFPS\n"
+		sprintf(tx, "Time:%.2f - Framerate: %.2fFPS\n"
 					"Coord Player x:%.2f y:%.2f z:%.2f\n "
 					"Speed Player x:%.2f y:%.2f z:%.2f\n",
 				time, frameCount/time,
@@ -218,6 +285,7 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 		}
 		cleanTime = 0;
 	}
+#ifndef __ANDROID__
 	if(!GetSubsystem<Input>()->IsMouseVisible())
 	{
 		static float yaw=0, pitch=0;
@@ -229,6 +297,24 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 		cameraNode->Yaw(yaw);
 		cameraNode->Pitch(pitch);
 	}
+#endif
+#if 1
+	static float yaw=0, pitch=0;
+	for(unsigned i=0; i<input->GetNumTouches(); i++)
+	{
+		TouchState *state = input->GetTouch(i);
+		if(!state->touchedElement_)
+		{
+			Camera *camera = cameraNode->GetComponent<Camera>();
+			Graphics *graphics = GetSubsystem<Graphics>();
+			yaw += TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.x_;
+			pitch+= TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.y_;
+			pitch = Clamp(pitch, -90.f, 90.f);
+			cameraNode->SetRotation(Quaternion(pitch, yaw, 0));
+
+		}
+	}
+#endif
 	if(input->GetKeyDown(KEY_SHIFT)) speed*=10;
 //	if(input->GetKeyDown(KEY_W)) cameraNode->Translate(Vector3::FORWARD*timeStep*speed);
 //	if(input->GetKeyDown(KEY_S)) cameraNode->Translate(Vector3::BACK*timeStep*speed);
@@ -250,6 +336,7 @@ void MyApp::postUpdate(StringHash, VariantMap &)
 {
 	if(draw) scene->GetComponent<PhysicsWorld>()->DrawDebugGeometry(false);
 	cameraNode->SetPosition(playerNode->GetPosition());//+Vector3(0, 10, 10.));
+	//if(!GetSubsystem<Graphics>()->GetFullscreen()) GetSubsystem<Graphics>()->ToggleFullscreen();
 }
 
 

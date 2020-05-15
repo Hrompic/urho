@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.0, 2020-05-12T18:25:08. -->
+<!-- Written by QtCreator 4.12.0, 2020-05-15T02:10:55. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -306,9 +306,10 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/user/prog/qt/urho/urho.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/user/prog/qt/urho/urho.pro</value>
-    <value type="QString" key="RunConfiguration.Arguments">-p '/usr/local/share/Urho3D/Resources/Data;/usr/local/share/Urho3D/Resources/CoreData;/usr/local/share/Urho3D/Resources/Autoload/LargeData'</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">urho2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/user/prog/urho/mars/urho.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/user/prog/urho/mars/urho.pro</value>
+    <value type="QString" key="RunConfiguration.Arguments">-p '/home/user/prog/urho/mars/and/assets/Data;/home/user/prog/urho/mars/and/assets/CoreData'</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
@@ -316,7 +317,7 @@
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseMultiProcess">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
-    <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">false</value>
+    <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory"></value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">/home/user/prog/qt/build-urho-Desktop_Qt_5_14_2_GCC_64bit-Debug</value>
    </valuemap>
