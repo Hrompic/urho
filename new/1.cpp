@@ -389,6 +389,7 @@ public:
         // Probably shouldn't be subscribing to events we don't care about.
     }
 };
+		
 
 /**
 * This macro is expanded to (roughly, depending on OS) this:
@@ -407,3 +408,16 @@ public:
 * > }
 */
 URHO3D_DEFINE_APPLICATION_MAIN(MyApp)
+/*
+int RunApplication() 
+{
+	Urho3D::SharedPtr<Urho3D::Context> context(new Urho3D::Context());
+	Urho3D::SharedPtr<MyApp> application(new MyApp(context));
+	return application->Run();
+}
+
+void android_main(int argc, char **argv)
+{
+	Urho3D::ParseArguments(argc, argv);
+	RunApplication();
+}*/

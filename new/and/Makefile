@@ -6,7 +6,7 @@ init:
 	dx --dex --output=./classes.dex obj
 reb:
 	aapt package -f -m -F app.apk -A assets/ -M AndroidManifest.xml -S res/ -I /home/user/Android/Sdk/platforms/android-26/android.jar
-	aapt add app.apk classes.dex lib/arm64-v8a/libout.so lib/arm64-v8a/libc++_shared.so
+	aapt add app.apk classes.dex lib/arm64-v8a/*
 sign:
 	
 	zipalign -f 4 app.apk app1.apk

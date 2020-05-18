@@ -2,23 +2,28 @@
 #include <Urho3D/Engine/Application.h>
 #include <Urho3D/Engine/Engine.h>
 #include <Urho3D/Engine/EngineDefs.h>
+#include <Urho3D/Engine/Console.h>
+#include <Urho3D/Engine/DebugHud.h>
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/UI/Text.h>
 #include <Urho3D/UI/Font.h>
 #include <Urho3D/UI/UI.h>
 #include <Urho3D/Resource/ResourceCache.h>
+#include <Urho3D/Resource/XMLFile.h>
 #include <Urho3D/Scene/Scene.h>
 #include <Urho3D/Scene/SceneEvents.h>
 #include <Urho3D/Graphics/Octree.h>
 #include <Urho3D/Graphics/Camera.h>
 #include <Urho3D/Graphics/Graphics.h>
+#include <Urho3D/Graphics/GraphicsEvents.h>
 #include <Urho3D/Graphics/Renderer.h>
 #include <Urho3D/Graphics/DebugRenderer.h>
 #include <Urho3D/Graphics/Material.h>
 #include <Urho3D/Graphics/Model.h>
 #include <Urho3D/Graphics/Skybox.h>
 #include <Urho3D/Graphics/StaticModel.h>
+#include <Urho3D/Graphics/Zone.h>
 #include <Urho3D/Graphics/Light.h>
 #include <Urho3D/Physics/PhysicsWorld.h>
 #include <Urho3D/Physics/RigidBody.h>
@@ -30,20 +35,11 @@
 #define TOUCHSENS 10
 #define BOXES 400
 
-namespace Urho3D
-{
-
-class Node;
-class Scene;
-class Sprite;
-
-}
-
 
 using namespace Urho3D;
 class MyApp : public Application
 {
-//	URHO3D_OBJECT(MyApp, Application)
+	URHO3D_OBJECT(MyApp, Application)
 public:
 	explicit MyApp(Context *context);
 	void Start() override;
@@ -53,6 +49,7 @@ private:
 	void update(StringHash evType, VariantMap &evData );
 	void postUpdate(StringHash , VariantMap &);
 	void kdHand(StringHash evType, VariantMap &evData );
+	void resize(StringHash evType, VariantMap &evData );
 	void initTouch();
 	SharedPtr<Text> text;
 	SharedPtr<Scene> scene;
@@ -73,9 +70,12 @@ MyApp::MyApp(Context *context):
 
 void MyApp::Setup()
 {
+	engineParameters_[EP_HEADLESS] = false;
+	engineParameters_[EP_SOUND] = false;
+//	engineParameters_[EP_VSYNC] = true;
+	//engineParameters_[EP_FULL_SCREEN] = true;
+#ifndef __ANDROID__
 	engineParameters_[EP_FULL_SCREEN] = false;
-#ifdef __ANDROID__
-	engineParameters_[EP_FULL_SCREEN] = true;
 #endif
 }
 
@@ -91,15 +91,24 @@ void MyApp::Start()
 	text->SetHorizontalAlignment(HA_CENTER);
 	GetSubsystem<UI>()->GetRoot()->AddChild(text);
 #if 1//def __ANDROID__
-
-
 	initTouch();
 #endif
+	Console *console = engine_->CreateConsole();
+	engine_->CreateDebugHud()->SetDefaultStyle(cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
+	console->SetDefaultStyle(cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
 	//Scene
 	scene = new Scene(context_);
 	scene->CreateComponent<Octree>();
 	scene->CreateComponent<DebugRenderer>();
 	scene->CreateComponent<PhysicsWorld>();
+	Node* zoneNode = scene->CreateChild("Zone");
+	auto* zone = zoneNode->CreateComponent<Zone>();
+	// Set same volume as the Octree, set a close bluish fog and some ambient light
+	zone->SetBoundingBox(BoundingBox(-1000.0f, 1000.0f));
+	zone->SetAmbientColor(Color(0.05f, 0.1f, 0.15f));
+	zone->SetFogColor(Color(0.5f, 0.5f, 0.5f));
+	zone->SetFogStart(0.0f);
+	zone->SetFogEnd(500.0f);
 	//Sky
 	Node *skyNode = scene->CreateChild("Sky");
 	skyNode->SetScale(50.);
@@ -177,6 +186,7 @@ void MyApp::Start()
 	SubscribeToEvent(E_KEYDOWN, URHO3D_HANDLER(MyApp, kdHand));
 	SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(MyApp, update));
 	SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(MyApp, postUpdate));
+	SubscribeToEvent(E_SCREENMODE, URHO3D_HANDLER(MyApp, resize));
 
 }
 
@@ -186,6 +196,24 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 	int key = evData[P_KEY].GetInt();
 	if(key==KEY_ESCAPE) engine_->Exit();
 	if(key==KEY_6) draw = !draw;
+	if(key==KEY_F1) GetSubsystem<Console>()->Toggle();
+	if(key==KEY_F2)
+	{
+		static bool on = false;
+		if(!on)
+		{
+			GetSubsystem<UI>()->SetScale(1.65);
+			GetSubsystem<DebugHud>()->ToggleAll();
+			on=!on;
+		}
+		else
+		{
+			GetSubsystem<UI>()->SetScale(3);
+			GetSubsystem<DebugHud>()->ToggleAll();
+			on=!on;
+		}
+	}
+	if(key==KEY_F3) GetSubsystem<UI>()->SetScale(1.);
 	if(key==KEY_TAB)
 	{
 		GetSubsystem<Input>()->SetTouchEmulation(!GetSubsystem<Input>()->IsMouseVisible());
@@ -205,43 +233,47 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 	}
 }
 
+void MyApp::resize(StringHash , VariantMap &)
+{
+	GetSubsystem<UI>()->SetScale(3.);
+	GetSubsystem<UI>()->GetRoot()->GetChild(String("ScreenJoystick"))->
+			SetSize(GetSubsystem<Graphics>()->GetWidth()/3.,
+					GetSubsystem<Graphics>()->GetHeight()/3.);
+	if(screenJoystick) GetSubsystem<UI>()->GetRoot()->GetChild(String("ScreenJoystickSettings"))->
+			SetSize(GetSubsystem<Graphics>()->GetWidth()/3.,
+					GetSubsystem<Graphics>()->GetHeight()/3.);
+}
+
 void MyApp::initTouch()
 {
-//	GetSubsystem<UI>()->SetWidth(400);
-//	GetSubsystem<UI>()->SetHeight(400);
-	GetSubsystem<UI>()->SetScale(3);
+	GetSubsystem<UI>()->SetScale(3.);
 //	GetSubsystem<Engine>()->SetPauseMinimized(true);
 //	auto graphics = GetSubsystem<Graphics>();
 //	auto monitor = graphics->GetMonitor();
 //	auto resolution = graphics->GetResolutions(monitor);
 	//auto cResol = graphics->FindBestResolutionIndex(monitor, graphics->GetWidth(), graphics->GetHeight(), graphics->GetRefreshRate());
 
-	//graphics->SetMode(graphics->GetWidth(), graphics->GetHeight(), true, false, false, false, true, true, true, monitor, graphics->GetRefreshRate());
-	//engineParameters_[EP_FULL_SCREEN] = true;
+//	graphics->SetMode(graphics->GetWidth(), graphics->GetHeight(), true, false, false, false, true, true, true, monitor, graphics->GetRefreshRate());
 	text->SetFontSize(20);
 	ResourceCache *cache = GetSubsystem<ResourceCache>();
 	Input *input = GetSubsystem<Input>();
 	XMLFile *layout = cache->GetResource<XMLFile>("UI/my.xml");
 	screenJoystick = input->AddScreenJoystick(layout,
-											  GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/DefaultStyle.xml"));
+											 GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/DefaultStyle.xml"));
 	UIElement *scjoy = GetSubsystem<UI>()->GetRoot()->GetChild(String("ScreenJoystick"));
-	//std::cout <<ui->GetName().CString();
+
 	UIElement *hat = scjoy->GetChild(String("Hat0"));
 	scjoy->GetChild(String("Button0"))->GetChildStaticCast<Text>("Label", true)->SetText("Up");
+
 	//hat->SetAlignment(HA_LEFT, VA_BOTTOM);
+	hat->SetSize(hat->GetSize().x_+20, hat->GetSize().x_+20);
 	hat->SetPosition(hat->GetPosition().x_+10, hat->GetPosition().y_+60);
-	//button->SetVisible(true);
-	//auto a = button->GetChildStaticCast<Text>("Label",true);
 	//std::cout <<a->GetText().CString();
-	//a->SetName("KeyBinding");
-//	a->SetText("Up");
 	scjoy->GetChild(String("Button1"))->GetChildStaticCast<Text>("Label", true)->SetText("Down");
-	//std::cout <<hat->GetName().CString();
-	//hat->SetWidth(150.);
-	//hat->SetHeight(150.);
+	scjoy->SetOpacity(0.25);
 	screenJoystick = 0;
-	File save(context_,"/home/user/123/ui.xml", FILE_WRITE );
-	GetSubsystem<UI>()->GetRoot()->GetChild(String("ScreenJoystick"))->SaveXML(save);
+//	File save(context_,"/home/user/123/ui.xml", FILE_WRITE );
+//	GetSubsystem<UI>()->GetRoot()->SaveXML(save);
 }
 
 void MyApp::update(StringHash/* evType*/, VariantMap &evData)
@@ -316,6 +348,7 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 	}
 #endif
 	if(input->GetKeyDown(KEY_SHIFT)) speed*=10;
+//  Free vision
 //	if(input->GetKeyDown(KEY_W)) cameraNode->Translate(Vector3::FORWARD*timeStep*speed);
 //	if(input->GetKeyDown(KEY_S)) cameraNode->Translate(Vector3::BACK*timeStep*speed);
 //	if(input->GetKeyDown(KEY_A)) cameraNode->Translate(Vector3::LEFT*timeStep*speed);
@@ -336,7 +369,6 @@ void MyApp::postUpdate(StringHash, VariantMap &)
 {
 	if(draw) scene->GetComponent<PhysicsWorld>()->DrawDebugGeometry(false);
 	cameraNode->SetPosition(playerNode->GetPosition());//+Vector3(0, 10, 10.));
-	//if(!GetSubsystem<Graphics>()->GetFullscreen()) GetSubsystem<Graphics>()->ToggleFullscreen();
 }
 
 
