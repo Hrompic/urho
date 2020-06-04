@@ -20,6 +20,8 @@
 #include <Urho3D/Graphics/Renderer.h>
 #include <Urho3D/Graphics/DebugRenderer.h>
 #include <Urho3D/Graphics/Material.h>
+#include <Urho3D/Graphics/ParticleEmitter.h>
+#include <Urho3D/Graphics/ParticleEffect.h>
 #include <Urho3D/Graphics/Model.h>
 #include <Urho3D/Graphics/Skybox.h>
 #include <Urho3D/Graphics/StaticModel.h>
@@ -57,13 +59,14 @@ private:
 	SharedPtr<Node> cameraNode;
 	SharedPtr<Node> playerNode;
 	bool draw;
-
+	bool thPerson;
 	unsigned screenJoystick;
 };
 URHO3D_DEFINE_APPLICATION_MAIN(MyApp)
 
 MyApp::MyApp(Context *context):
-	Application(context)
+	Application(context),
+	thPerson(true)
 {
 
 }
@@ -115,11 +118,17 @@ void MyApp::Start()
 	Skybox *skyBox= skyNode->CreateComponent<Skybox>();
 	skyBox->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
 	skyBox->SetMaterial(cache->GetResource<Material>("Materials/Skybox.xml"));
+/*	//Particles
+	Node *particleNone = scene->CreateChild("Particles");
+	particleNone->SetScale(5);
+	ParticleEmitter *part = particleNone->CreateComponent<ParticleEmitter>();
+	part->SetEffect(cache->GetResource<ParticleEffect>("Particle/Dust.xml"));
+*/
 	//Light
 	Node *lightNode = scene->CreateChild("Light");
 	lightNode->SetDirection(Vector3::FORWARD);
-	lightNode->Yaw(50.);
-	lightNode->Pitch(50.);
+	lightNode->Yaw(150.);
+	lightNode->Pitch(150.);
 	Light *light = lightNode->CreateComponent<Light>();
 	light->SetLightType(LIGHT_DIRECTIONAL);
 	light->SetBrightness(1.1);
@@ -165,8 +174,9 @@ void MyApp::Start()
 	player->SetMaterial(cache->GetResource<Material>("Materials/StoneTiled.xml"));
 	player->SetShadowMask(true);
 	body = playerNode->CreateComponent<RigidBody>();
-	body->SetMass(1.);
-	body->SetFriction(.75);
+	body->SetMass(5.);
+	body->SetFriction(1.75);
+	body->SetRestitution(.25);
 	body->SetCollisionLayer(2);
 	playerNode->CreateComponent<CollisionShape>()->SetSphere(1);
 	//Camera
@@ -194,8 +204,8 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 {
 	using namespace KeyDown;
 	int key = evData[P_KEY].GetInt();
+	Renderer *renderer = GetSubsystem<Renderer>();
 	if(key==KEY_ESCAPE) engine_->Exit();
-	if(key==KEY_6) draw = !draw;
 	if(key==KEY_F1) GetSubsystem<Console>()->Toggle();
 	if(key==KEY_F2)
 	{
@@ -214,6 +224,18 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 		}
 	}
 	if(key==KEY_F3) GetSubsystem<UI>()->SetScale(1.);
+	if(key==KEY_2)
+	{
+		auto quality = (unsigned)renderer->GetMaterialQuality();
+		++quality;
+		if(quality>QUALITY_HIGH)
+			quality = QUALITY_LOW;
+		renderer->SetMaterialQuality((MaterialQuality) quality);
+	}
+	if (key == KEY_3)
+				renderer->SetSpecularLighting(!renderer->GetSpecularLighting());
+	if(key==KEY_6) draw = !draw;
+	if(key==KEY_7) thPerson = !thPerson;
 	if(key==KEY_TAB)
 	{
 		GetSubsystem<Input>()->SetTouchEmulation(!GetSubsystem<Input>()->IsMouseVisible());
@@ -226,8 +248,7 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 		Input* input = GetSubsystem<Input>();
 		if(!screenJoystick)
 			screenJoystick = input->AddScreenJoystick(GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/ScreenJoystickSettings_Samples.xml"),
-									 GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/DefaultStyle.xml"));
-
+													  GetSubsystem<ResourceCache>()->GetResource<XMLFile>("UI/DefaultStyle.xml"));
 		else input->SetScreenJoystickVisible(screenJoystick, en);
 
 	}
@@ -324,12 +345,14 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 		IntVector2 mouseMove = input->GetMouseMove();
 		yaw += MOUSESENS*mouseMove.x_;
 		pitch += MOUSESENS*mouseMove.y_;
-		pitch = Clamp(pitch, -90.f, 90.f);
+		pitch = Clamp(pitch, !thPerson? -90.f:-1.f, 90.f);
 		cameraNode->SetDirection(Vector3::FORWARD);
 		cameraNode->Yaw(yaw);
 		cameraNode->Pitch(pitch);
+	//	cameraNode->SetRotation(Quaternion(pitch, yaw, 0));
 	}
 #endif
+
 #if 1
 	static float yaw=0, pitch=0;
 	for(unsigned i=0; i<input->GetNumTouches(); i++)
@@ -341,7 +364,7 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 			Graphics *graphics = GetSubsystem<Graphics>();
 			yaw += TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.x_;
 			pitch+= TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.y_;
-			pitch = Clamp(pitch, -90.f, 90.f);
+			pitch = Clamp(pitch, !thPerson? -90.f:-1.f, 90.f);
 			cameraNode->SetRotation(Quaternion(pitch, yaw, 0));
 
 		}
@@ -353,12 +376,12 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 //	if(input->GetKeyDown(KEY_S)) cameraNode->Translate(Vector3::BACK*timeStep*speed);
 //	if(input->GetKeyDown(KEY_A)) cameraNode->Translate(Vector3::LEFT*timeStep*speed);
 //	if(input->GetKeyDown(KEY_D)) cameraNode->Translate(Vector3::RIGHT*timeStep*speed);
-	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::FORWARD*0.8);//Vector3(0, 0, 5.));
-	if(input->GetKeyDown(KEY_S)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::BACK*0.8);
-	if(input->GetKeyDown(KEY_A)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::LEFT*0.8);
-	if(input->GetKeyDown(KEY_D)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::RIGHT*0.8);
-	if(input->GetKeyDown(KEY_SPACE)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::UP*0.8);
-	if(input->GetKeyDown(KEY_LCTRL)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::DOWN*0.8);
+	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Vector3::FORWARD*1.8);//Vector3(0, 0, 5.));
+	if(input->GetKeyDown(KEY_S)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::BACK*1.8);
+	if(input->GetKeyDown(KEY_A)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::LEFT*1.8);
+	if(input->GetKeyDown(KEY_D)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::RIGHT*1.8);
+	if(input->GetKeyDown(KEY_SPACE)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Vector3::UP*1.8);
+	if(input->GetKeyDown(KEY_LCTRL)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Vector3::DOWN*1.8);
 
 
 
@@ -368,7 +391,16 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 void MyApp::postUpdate(StringHash, VariantMap &)
 {
 	if(draw) scene->GetComponent<PhysicsWorld>()->DrawDebugGeometry(false);
-	cameraNode->SetPosition(playerNode->GetPosition());//+Vector3(0, 10, 10.));
+	if(thPerson)
+	{
+		playerNode->GetComponent<StaticModel>()->SetCastShadows(true);
+		cameraNode->SetPosition(playerNode->GetPosition() + cameraNode->GetRotation() * Vector3::BACK*50.);
+	}
+	else
+	{
+		playerNode->GetComponent<StaticModel>()->SetCastShadows(false);
+		cameraNode->SetPosition(playerNode->GetPosition());
+	}
 }
 
 
