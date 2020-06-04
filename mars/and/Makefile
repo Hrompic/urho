@@ -15,8 +15,15 @@ rlib:
 	aapt r app.apk lib/arm64-v8a/liba.so 
 	aapt add app.apk lib/arm64-v8a/liba.so
 	$(MAKE) sign
+trlib:
+	aapt r app.apk lib/arm64-v8a/liba.so 
+	aapt add app.apk lib/arm64-v8a/liba.so
+	apksigner ~/source/panda3d/debug.ks app.apk app1.apk
 install:
 	adb install -r app1.apk 
+tinstall:
+	su -c pm install -r app1.apk
+	am start org.FUCK.app/.MainActivity
 clean:
 	rm -rf app.apk app1.apk	
 remake: clean reb sign
