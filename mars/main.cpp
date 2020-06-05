@@ -35,7 +35,7 @@
 
 #define MOUSESENS .2
 #define TOUCHSENS 10
-#define BOXES 400
+#define BOXES 200
 
 
 using namespace Urho3D;
@@ -186,7 +186,7 @@ void MyApp::Start()
 	//camera->SetZoom(5);
 	camera->SetFarClip(5000.);
 
-
+//	scene->GetComponent<DebugRenderer>()->AddSphere(Sphere(Vector3(0.,20, 0.), 50.), Color::BLUE);
 	Renderer *render = GetSubsystem<Renderer>();
 	SharedPtr<Viewport> viewport(new Viewport(context_, scene, cameraNode->GetComponent<Camera>()));
 	render->SetViewport(0, viewport);
@@ -235,7 +235,11 @@ void MyApp::kdHand(StringHash /*evType*/, VariantMap &evData)
 	if (key == KEY_3)
 				renderer->SetSpecularLighting(!renderer->GetSpecularLighting());
 	if(key==KEY_6) draw = !draw;
-	if(key==KEY_7) thPerson = !thPerson;
+	if(key==KEY_7)
+	{
+		thPerson = !thPerson;
+		cameraNode->GetComponent<Camera>()->SetFov(thPerson ?45 :70);
+	}
 	if(key==KEY_TAB)
 	{
 		GetSubsystem<Input>()->SetTouchEmulation(!GetSubsystem<Input>()->IsMouseVisible());
@@ -345,7 +349,7 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 		IntVector2 mouseMove = input->GetMouseMove();
 		yaw += MOUSESENS*mouseMove.x_;
 		pitch += MOUSESENS*mouseMove.y_;
-		pitch = Clamp(pitch, !thPerson? -90.f:-1.f, 90.f);
+		pitch = Clamp(pitch, !thPerson? -80.f:-1.f, 80.f);
 		cameraNode->SetDirection(Vector3::FORWARD);
 		cameraNode->Yaw(yaw);
 		cameraNode->Pitch(pitch);
@@ -354,17 +358,19 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 #endif
 
 #if 1
-	static float yaw=0, pitch=0;
 	for(unsigned i=0; i<input->GetNumTouches(); i++)
 	{
 		TouchState *state = input->GetTouch(i);
 		if(!state->touchedElement_)
 		{
+			static float yaw = cameraNode->GetRotation().YawAngle(),
+						 pitch = cameraNode->GetRotation().PitchAngle();
 			Camera *camera = cameraNode->GetComponent<Camera>();
 			Graphics *graphics = GetSubsystem<Graphics>();
 			yaw += TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.x_;
 			pitch+= TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.y_;
-			pitch = Clamp(pitch, !thPerson? -90.f:-1.f, 90.f);
+			pitch = Clamp(pitch, !thPerson ?-80.f :-1.f, 80.f);
+			std::cout <<yaw <<"\t" <<pitch <<std::endl;
 			cameraNode->SetRotation(Quaternion(pitch, yaw, 0));
 
 		}
@@ -376,8 +382,10 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 //	if(input->GetKeyDown(KEY_S)) cameraNode->Translate(Vector3::BACK*timeStep*speed);
 //	if(input->GetKeyDown(KEY_A)) cameraNode->Translate(Vector3::LEFT*timeStep*speed);
 //	if(input->GetKeyDown(KEY_D)) cameraNode->Translate(Vector3::RIGHT*timeStep*speed);
-	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::FORWARD*1.8);//Vector3(0, 0, 5.));
-	if(input->GetKeyDown(KEY_S)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::BACK*1.8);
+//	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::FORWARD*1.8);
+
+	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::FORWARD*1.8);
+	if(input->GetKeyDown(KEY_S)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::BACK*1.8);
 	if(input->GetKeyDown(KEY_A)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::LEFT*1.8);
 	if(input->GetKeyDown(KEY_D)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::RIGHT*1.8);
 	if(input->GetKeyDown(KEY_SPACE)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Vector3::UP*1.8);
