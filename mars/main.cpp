@@ -345,7 +345,8 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 #ifndef __ANDROID__
 	if(!GetSubsystem<Input>()->IsMouseVisible())
 	{
-		static float yaw=0, pitch=0;
+		static float yaw = cameraNode->GetRotation().YawAngle(),
+					 pitch = cameraNode->GetRotation().PitchAngle();
 		IntVector2 mouseMove = input->GetMouseMove();
 		yaw += MOUSESENS*mouseMove.x_;
 		pitch += MOUSESENS*mouseMove.y_;
@@ -363,8 +364,8 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 		TouchState *state = input->GetTouch(i);
 		if(!state->touchedElement_)
 		{
-			static float yaw = cameraNode->GetRotation().YawAngle(),
-						 pitch = cameraNode->GetRotation().PitchAngle();
+			float yaw = cameraNode->GetRotation().YawAngle(),
+				  pitch = cameraNode->GetRotation().PitchAngle();
 			Camera *camera = cameraNode->GetComponent<Camera>();
 			Graphics *graphics = GetSubsystem<Graphics>();
 			yaw += TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.x_;
