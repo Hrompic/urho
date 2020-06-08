@@ -31,12 +31,9 @@
 #include <Urho3D/Physics/RigidBody.h>
 #include <Urho3D/Physics/CollisionShape.h>
 #include <Urho3D/IO/File.h>
-
 #include <iostream>
 #include <SDL/SDL.h>
 #include <cstdlib>
-#include <signal.h>
-
 #define MOUSESENS .2
 #define TOUCHSENS 10
 #define BOXES 200
@@ -90,7 +87,6 @@ void MyApp::Setup()
 void MyApp::Stop()
 {
 	std::atexit(SDL_Quit);
-	raise(SIGTERM);
 }
 
 
