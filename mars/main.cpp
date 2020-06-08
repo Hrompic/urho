@@ -32,8 +32,7 @@
 #include <Urho3D/Physics/CollisionShape.h>
 #include <Urho3D/IO/File.h>
 #include <iostream>
-#include <SDL/SDL.h>
-#include <cstdlib>
+
 #define MOUSESENS .2
 #define TOUCHSENS 10
 #define BOXES 200
@@ -47,7 +46,6 @@ public:
 	explicit MyApp(Context *context);
 	void Start() override;
 	void Setup() override;
-	void Stop() override;
 
 private:
 	void update(StringHash evType, VariantMap &evData );
@@ -82,11 +80,6 @@ void MyApp::Setup()
 #ifndef __ANDROID__
 	engineParameters_[EP_FULL_SCREEN] = false;
 #endif
-}
-
-void MyApp::Stop()
-{
-	std::atexit(SDL_Quit);
 }
 
 
@@ -352,8 +345,7 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 #ifndef __ANDROID__
 	if(!GetSubsystem<Input>()->IsMouseVisible())
 	{
-		static float yaw = cameraNode->GetRotation().YawAngle(),
-					 pitch = cameraNode->GetRotation().PitchAngle();
+		static float yaw=0, pitch=0;
 		IntVector2 mouseMove = input->GetMouseMove();
 		yaw += MOUSESENS*mouseMove.x_;
 		pitch += MOUSESENS*mouseMove.y_;
@@ -372,7 +364,7 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 		if(!state->touchedElement_)
 		{
 			static float yaw = cameraNode->GetRotation().YawAngle(),
-				  pitch = cameraNode->GetRotation().PitchAngle();
+						 pitch = cameraNode->GetRotation().PitchAngle();
 			Camera *camera = cameraNode->GetComponent<Camera>();
 			Graphics *graphics = GetSubsystem<Graphics>();
 			yaw += TOUCHSENS*camera->GetFov() / graphics->GetHeight()*state->delta_.x_;
