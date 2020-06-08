@@ -36,6 +36,8 @@
 #include <SDL/SDL.h>
 #include <cstdlib>
 #include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define MOUSESENS .2
 #define TOUCHSENS 10
@@ -90,7 +92,8 @@ void MyApp::Setup()
 void MyApp::Stop()
 {
 	std::atexit(SDL_Quit);
-	raise(SIGTERM);
+	kill(getppid(),SIGTERM);
+
 }
 
 
