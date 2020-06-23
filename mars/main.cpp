@@ -134,6 +134,8 @@ void MyApp::Start()
 	light->SetBrightness(1.1);
 	light->SetColor(Color(1.0, .6, .5));
 	light->SetCastShadows(true);
+	light->SetShadowBias(BiasParameters(0.00025f, 0.5f));
+	light->SetShadowCascade(CascadeParameters(10.0f, 50.0f, 200.0f, 0.0f, 0.8f));
 	//Ground
 	Node *groundNode = scene->CreateChild("Ground");
 	groundNode->SetPosition(Vector3(0, -.5, 0));
