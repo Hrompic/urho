@@ -18,7 +18,9 @@ rlib:
 trlib:
 	aapt r app.apk lib/arm64-v8a/liba.so 
 	aapt add app.apk lib/arm64-v8a/liba.so
-	apksigner ~/source/panda3d/debug.ks app.apk app1.apk
+	#apksigner ~/source/panda3d/debug.ks app.apk app1.apk
+	zipalign -f 4 app.apk app1.apk
+	apksigner sign --ks ~/debug.ks app1.apk
 install:
 	adb install -r app1.apk 
 tinstall:
