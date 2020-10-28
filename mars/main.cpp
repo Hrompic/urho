@@ -134,8 +134,13 @@ void MyApp::Start()
 	light->SetBrightness(1.1);
 	light->SetColor(Color(1.0, .6, .5));
 	light->SetCastShadows(true);
+<<<<<<< HEAD
     light->SetShadowBias(BiasParameters(0.00025f, 0.5f));
 	light->SetShadowCascade(CascadeParameters(10.0f, 50.0f, 200.0f, 0.0f, 0.8f));
+=======
+	light->SetShadowBias(BiasParameters(0.00095f, 0.5f));
+	light->SetShadowCascade(CascadeParameters(30.0f, 50.0f, 200.0f, 0.0f, 0.8f));
+>>>>>>> origin/Termux_master
 	//Ground
 	Node *groundNode = scene->CreateChild("Ground");
 	groundNode->SetPosition(Vector3(0, -.5, 0));
@@ -415,6 +420,7 @@ void MyApp::postUpdate(StringHash, VariantMap &)
 	if(thPerson)
 	{
 		playerNode->GetComponent<StaticModel>()->SetCastShadows(true);
+		scene->GetChild("Light")->GetComponent<Light>()->SetShadowCascade(CascadeParameters(100, 100, 200, 100, 0.1, 0.55));
 		cameraNode->SetPosition(playerNode->GetPosition() + cameraNode->GetRotation() * Vector3::BACK*50.);
 	}
 	else

@@ -1,4 +1,5 @@
-all: andr install-andr
+#all: andr install-andr
+all: termux tinstall
 #g++ main.cpp -lUrho3D -g -O2 -D__DEBUG__
 termux:
 	g++ main.cpp -g  -D__ANDROID__ -shared -fPIC -lc++_shared -lUrho3D -lGLESv2 -landroid  -o and/lib/arm64-v8a/liba.so -I /data/data/com.termux/files/usr/include/Urho3D/ThirdParty/
