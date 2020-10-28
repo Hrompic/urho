@@ -134,7 +134,7 @@ void MyApp::Start()
 	light->SetBrightness(1.1);
 	light->SetColor(Color(1.0, .6, .5));
 	light->SetCastShadows(true);
-	light->SetShadowBias(BiasParameters(0.00025f, 0.5f));
+    light->SetShadowBias(BiasParameters(0.00025f, 0.5f));
 	light->SetShadowCascade(CascadeParameters(10.0f, 50.0f, 200.0f, 0.0f, 0.8f));
 	//Ground
 	Node *groundNode = scene->CreateChild("Ground");
@@ -387,15 +387,25 @@ void MyApp::update(StringHash/* evType*/, VariantMap &evData)
 //	if(input->GetKeyDown(KEY_D)) cameraNode->Translate(Vector3::RIGHT*timeStep*speed);
 //	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::FORWARD*1.8);
 
-	if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::FORWARD*1.8);
-	if(input->GetKeyDown(KEY_S)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::BACK*1.8);
+    if(input->GetKeyDown(KEY_W)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::FORWARD*1.8);
+    //BOOST
+    if(input->GetKeyDown(KEY_E)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::FORWARD*100.8);
+
+    if(input->GetKeyDown(KEY_S)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Quaternion(0 ,cameraNode->GetRotation().YawAngle(), 0)*Vector3::BACK*1.8);
 	if(input->GetKeyDown(KEY_A)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::LEFT*1.8);
 	if(input->GetKeyDown(KEY_D)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(cameraNode->GetRotation()*Vector3::RIGHT*1.8);
 	if(input->GetKeyDown(KEY_SPACE)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Vector3::UP*1.8);
 	if(input->GetKeyDown(KEY_LCTRL)) playerNode->GetComponent<RigidBody>()->ApplyImpulse(Vector3::DOWN*1.8);
-
-
-
+    {
+    static int x = 1;
+    if(fabs(playerNode->GetPosition().x_)/x>500.)
+    {
+        x++;
+//        std::cout <<"step: "<<x<<std::endl;
+        Node * ground = scene->GetChild("Ground")->Clone();
+        ground->SetPosition(playerNode->GetPosition());
+    }
+    }
 
 }
 
